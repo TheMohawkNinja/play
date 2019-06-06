@@ -17,7 +17,18 @@ REQUIREMENTS:
 
 INSTALLATION:
 
-	Extract the contents of the git cloned package and run the "installplay" script
+	Linux machine
+	-------------
+	Extract the contents of the git cloned package and run the "installplay" script.
+
+
+	Windows machine
+	---------------
+	Place RunPrgm.ps1 file in desired location. Take note of where it is.
+
+CONFIGURATION:
+
+	Open ~/.config/play/config and fill out the values accordingly.
 
 HOW TO USE:
 
