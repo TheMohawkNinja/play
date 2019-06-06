@@ -1,0 +1,27 @@
+#*****************************************
+#REMEMBER TO PLACE THIS IN ~/.config/play/
+#*****************************************
+
+#Password for ssh server on gaming rig
+ssh_pswd=
+
+#Parsec email
+email=
+
+#Server number that Parsec asks for (likely '1' if you only use one gaming rig for Parsec)
+server=1
+
+#Desktop location for games (I use this due to my personal setup, but you can point it to whereever)
+desktop=
+
+#Appdata location for games, generally whereever "%localappdata%" takes you in Windows File Explorer
+appdata=
+
+#IP address of gaming rig
+ip=
+
+#Location of RunPrgm.ps1 script (including name of script)
+PS=
+
+#Windows user that the game will play on
+name=

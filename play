@@ -1,0 +1,222 @@
+#!/bin/bash
+
+#Config file location
+config=~/.config/play/config
+
+#Vars/arrs used for script
+gamecmd="$1"
+prgm=""
+line=""
+pathf=""
+ctr=0
+ip=`cat $config | sed -n -e 's/^.*ip=//p'`
+PS=`cat $config | sed -n -e 's/^.*PS=//p'`
+name=`cat $config | sed -n -e 's/^.*name=//p'`
+declare -a short
+declare -a long
+declare -a path
+
+#Shortcut locations to make adding games easier
+STEAM="steam://rungameid/"
+DESKTOP=`cat $config | sed -n -e 's/^.*desktop=//p'`
+APPDATA=`cat $config | sed -n -e 's/^.*appdata=//p'`
+
+function list_games_with_path()
+{
+	printf "%-10s           %-25s      %-50s\n" "Command" "Game Title" "Path"
+        echo "---------------------------------------------------------"
+        for (( IFS=" " i=0; i<$ctr; i++ )); do
+		#Remove/replace backslash, quote marks, and path shortcuts from path and print result in table
+		pathf="${path[i]//\\/}"
+		pathf="${pathf//\"/}"
+		pathf="${pathf//%STEAM%/$STEAM}"
+		pathf="${pathf//%DESKTOP%/$DESKTOP}"
+		pathf="${pathf//%APPDATA%/$APPDATA}"
+      		printf "%-15s|     %-25s|     %-50s\n" "${short[i]}" "${long[i]}" "$pathf"
+        done
+	echo
+}
+
+function list_games()
+{
+        printf "%-10s           %-25s\n" "Command" "Game Title"
+        echo "--------------------------------"
+        for (( IFS=" " i=0; i<$ctr; i++ )); do
+                printf "%-15s|     %-25s\n" "${short[i]}" "${long[i]}"
+        done
+	echo
+}
+
+function run_game()
+{
+	#Set variables. Needed to handle strings correctly
+	run_cmd="psexec '\\\\\\\\$ip' -accepteula -nobanner powershell $PS $1 $name start"
+	kill_cmd="psexec '\\\\\\\\$ip' -accepteula -nobanner powershell $PS $1 $name kill $gamecmd"
+	pwd=`cat $config | sed -n -e 's/^.*ssh_pswd=//p'`"\r"
+	expt_pwd_ssh="password:"
+	expt_pwd_parsecd="password"
+	expt_email="e-mail"
+	yes="y\r"
+	email=`cat $config | sed -n -e 's/^.*email=//p'`"\r"
+	server="server"
+	one=`cat $config | sed -n -e 's/^.*server=//p'`"\r"
+
+	#Login to ssh to start game
+	/usr/bin/expect -c "
+	set timeout 120
+	spawn ssh BENPC+Ben@192.168.1.3 $run_cmd
+	expect $expt_pwd_ssh
+	send -- $pwd
+	sleep 1
+	send -- \x03
+	expect eof"
+
+	#Launch parsecd
+	/usr/bin/expect -c "
+	spawn parsecd &
+	expect {
+		$expt_email {
+			send -- $email
+			expect $expt_pwd_parsecd
+			send -- $yes
+		}
+
+		$expt_pwd_parsecd {
+			send -- $yes
+		}
+	}
+	expect $server
+	send -- $one
+	exec /etc/play/checkpid #Keep parsecd running so long as client stream is running.
+	expect eof"
+
+	#Login to ssh to terminate game
+        /usr/bin/expect -c "
+        set timeout 120
+        spawn ssh BENPC+Ben@192.168.1.3 $kill_cmd
+        expect $expt_pwd_ssh
+        send -- $pwd
+        sleep 1
+        send -- \x03
+        expect eof"
+}
+
+#Load games from games.list file
+if [ -f "games.list" ]; then
+
+	#Read games list
+	while IFS= read -r line; do
+		short[$ctr]=$(echo $line | awk -F, '{print $1}')
+		long[$ctr]=$(echo $line | awk -F, '{print $2}')
+		path[$ctr]=$(echo $line | awk -F, '{print $3}')
+		((ctr++))
+	done < "games.list"
+else
+	#Make games list file if it does not exist
+	echo "./games.list" file  not found, creating!
+	touch games.list;
+fi
+
+#Add space for formatting
+echo
+
+#Check for script arguments
+while [ "$#" != "" ]
+do
+	case "$1" in
+		-l)
+			#Display games list
+			list_games
+			break;;
+		-lp)
+                        #Display games list with paths
+                        list_games_with_path
+                        break;;
+
+		-f)
+			#Find for parameter and display
+			printf "%-15s      %-25s\n" "Command" "Game Title"
+        		echo "--------------------------------"
+			list_games | grep -i $2
+			echo
+			break;;
+		-fp)
+                        #Find for parameter and display
+                        printf "%-15s      %-25s      %-50s\n" "Command" "Game Title" "Path"
+                        echo "---------------------------------------------------------"
+                        list_games_with_path | grep -i $2
+                        echo
+			break;;
+
+		-a)
+			#Add game to list
+			pathf="${4//\\//}"
+			echo  "$2,$3,\"\\\\\\\"\\\"$pathf\\\"\\\\\\\"\"" >> games.list
+			echo "Added \"$3\" to the games list."
+			break;;
+		-r)
+			#Attempt to remove game from list
+			if grep -q "$2" ./games.list; then
+				match="$(grep "$2" ./games.list | grep -o ',.*,' | head -1)"
+				match="${match//,/}"
+				sed -i "/$match,/d" ./games.list
+				echo "Removed \"$match\" from the games list."
+			else
+				echo "Did not find match for \"$2\" in games list."
+			fi
+			break;;
+		--help)
+			clear
+			echo -e "Launch program on remote Windows PC and start streaming service automatically.\n"
+			echo -e "USAGE"
+			echo -e "-----"
+			echo -e
+			echo -e "\e[3mplay [COMMAND]\e[0m"
+			echo -e "Launch the game defined by the COMMAND parameter.\n"
+			echo -e "\e[3mplay -l\e[0m"
+			echo -e "Print a formatted table of games saved to the games.list file excluding file paths.\n"
+			echo -e "\e[3mplay -lp\e[0m"
+                        echo -e "Print a formatted table of games saved to the games.list file including file paths.\n"
+			echo -e "\e[3mplay -f [PATTERN]\e[0m"
+			echo -e "Search for a matching PATTERN in the games.list file and list results excluding file paths.\n"
+			echo -e "\e[3mplay -fp [PATTERN]\e[0m"
+                        echo -e "Search for a matching PATTERN in the games.list file and list results including file paths.\n"
+			echo -e "\e[3mplay -a [COMMAND] [TITLE] [PATH]\e[0m"
+			echo -e "Add a game to the list that is located at the PATH on the Windows machine, is started by using the COMMAND parameter, and can be easily referenced in the -l functionality by the game's formal TITLE.\n"
+			echo -e "*** NOTE: Make sure the command is either named the same as, or contains a large section of the name of the name of the .exe file for the name, as this is what the program uses to determine what program it needs to kill upon exiting Parsec. ***\n"
+			echo -e "\tFilepath shortcuts for PATH"
+			echo -e "\t---------------------------"
+			printf  "\t%-10s %-1s %-50s\n" "%STEAM%" "=" "$STEAM"
+			printf  "\t%-10s %-1s %-50s\n" "%DESKTOP%" "=" "$DESKTOP"
+			printf  "\t%-10s %-1s %-50s\n\n" "%APPDATA%" "=" "$APPDATA"
+			echo -e "\e[3mplay -r [PATTERN]\e[0m"
+			echo -e "Search for a matching PATTERN in the games.list file and remove it from the games.list file.\n"
+			echo -e "\e[3mplay --help\e[0m"
+			echo -e "Print this help text.\n"
+			break;;
+		*)
+			#Search for matching game
+			shopt -s nocasematch
+
+			for (( i=0; i<$ctr; i++ )); do
+				if [[ "$1" == "${short[i]}" ]]; then
+					path[i]="${path[i]//%STEAM%/$STEAM}"
+					path[i]="${path[i]//%DESKTOP%/$DESKTOP}"
+					path[i]="${path[i]//%APPDATA%/$APPDATA}"
+					prgm="${path[i]}"
+					break
+				fi
+			done
+			shopt -u nocasematch
+
+			#If there was a match, run program. Otherwise, run first arg as is.
+			if [ "$prgm" != "" ]; then
+				run_game "$prgm"
+			else
+				run_game "$1"
+			fi
+
+			break;;
+	esac
+	shift
+done

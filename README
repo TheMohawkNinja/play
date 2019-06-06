@@ -1,0 +1,50 @@
+"play" is a script that allows a user to control a game that is hosted on a Windows machine from a Linux machine.
+
+REQUIREMENTS:
+
+	Windows machine (gaming rig)
+	----------------------------
+	1. CygWin installed with ssh server using password authentication (https://www.cygwin.com/)
+	2. Parsec streaming application with the Windows machine setup as a host (https://parsecgaming.com/)
+	3. PowerShell
+	4. PSExec (https://docs.microsoft.com/en-us/sysinternals/downloads/psexec)
+
+	Linux machine (client)
+	----------------------
+	1. Parsec streaming application
+	2. Expect (http://core.tcl.tk/expect/index)
+	3. ssh
+
+INSTALLATION:
+
+	Extract the contents of the git cloned package and run the "installplay" script
+
+HOW TO USE:
+
+	play [COMMAND]
+        Launch the game defined by the COMMAND parameter.
+
+	play -l
+        Print a formatted table of games saved to the games.list file excluding file paths.
+
+        play -lp
+        Print a formatted table of games saved to the games.list file including file paths.
+
+	play -f [PATTERN]
+        Search for a matching PATTERN in the games.list file and list results excluding file paths.
+
+        play -fp [PATTERN]
+        Search for a matching PATTERN in the games.list file and list results including file paths.
+
+        play -a [COMMAND] [TITLE] [PATH]
+        Add a game to the list that is located at the PATH on the Windows machine, is started by using the COMMAND parameter, and can be easily referenced in the -l functionality by the game's formal TITLE.
+         
+		*** NOTE: Make sure the command is either named the same as, or contains a large section of the name of the name of the .exe file for the name, as this is what the program uses to determine what program it needs to kill upon exiting Parsec. ***
+
+		Filepath shortcuts for PATH can be found in the ~/.config/play/config file and referenced via the --help flag
+
+	play -r [PATTERN]
+        Search for a matching PATTERN in the games.list file and remove it from the games.list file.
+
+	play --help
+	Print help text.
