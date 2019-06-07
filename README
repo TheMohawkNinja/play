@@ -50,7 +50,7 @@ HOW TO USE:
         play -a [COMMAND] [TITLE] [PATH]
         Add a game to the list that is located at the PATH on the Windows machine, is started by using the COMMAND parameter, and can be easily referenced in the -l functionality by the game's formal TITLE.
          
-		*** NOTE: Make sure the command is either named the same as, or contains a large section of the name of the name of the .exe file for the name, as this is what the program uses to determine what program it needs to kill upon exiting Parsec. ***
+		*** NOTE: Games that initially run via a launcher program with the actual game being a seperate program may not get auto-killed on exiting the stream. ***
 
 		Filepath shortcuts for PATH can be found in the ~/.config/play/config file and referenced via the --help flag
 
