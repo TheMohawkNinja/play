@@ -12,6 +12,8 @@ ctr=0
 ip=`cat $config | sed -n -e 's/^.*ip=//p'`
 PS=`cat $config | sed -n -e 's/^.*PS=//p'`
 name=`cat $config | sed -n -e 's/^.*name=//p'`
+host=`cat $config | sed -n -e 's/^.*host=//p'`
+id=`cat $config | sed -n -e 's/^.*id=//p'`
 declare -a short
 declare -a long
 declare -a path
@@ -64,7 +66,7 @@ function run_game()
 	#Login to ssh to start game
 	/usr/bin/expect -c "
 	set timeout 120
-	spawn ssh BENPC+Ben@192.168.1.3 $run_cmd
+	spawn ssh $host+$name@$ip $run_cmd
 	expect $expt_pwd_ssh
 	send -- $pwd
 	sleep 1
@@ -73,7 +75,7 @@ function run_game()
 
 	#Launch parsecd
 	/usr/bin/expect -c "
-	spawn parsecd &
+	spawn parsecd peer_id=$id &
 	expect {
 		$expt_email {
 			send -- $email
@@ -85,15 +87,15 @@ function run_game()
 			send -- $yes
 		}
 	}
-	expect $server
-	send -- $one
+	#expect $server
+	#send -- $one
 	exec /etc/play/checkpid #Keep parsecd running so long as client stream is running.
 	expect eof"
 
 	#Login to ssh to terminate game
         /usr/bin/expect -c "
         set timeout 120
-        spawn ssh BENPC+Ben@192.168.1.3 $kill_cmd
+        spawn ssh $host+$name@$ip $kill_cmd
         expect $expt_pwd_ssh
         send -- $pwd
         sleep 1

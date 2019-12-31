@@ -9,7 +9,7 @@ ssh_pswd=
 email=
 
 #Server number that Parsec asks for (likely '1' if you only use one gaming rig for Parsec)
-server=1
+server=
 
 #Desktop location for games (I use this due to my personal setup, but you can point it to whereever)
 desktop=
@@ -25,3 +25,9 @@ PS=
 
 #Windows user that the game will play on
 name=
+
+#Windows machine name
+host=
+
+#Parsec peer ID
+id=
