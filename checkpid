@@ -1,8 +1,0 @@
-#!/bin/bash
-
-#This script exists to check if the Parsec streaming window is running client-side.
-#This allows the closing of the Parsec client to cleanly exit back to a terminal prompt.
-
-while [ -n "$(ps a | grep '[0-9] parsecd &' | egrep -o '[0-9]{4,}')" ]; do
-	sleep 1
-done
