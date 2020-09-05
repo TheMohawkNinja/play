@@ -4,16 +4,15 @@ REQUIREMENTS:
 
 	Windows machine (gaming rig)
 	----------------------------
-	1. CygWin installed with ssh server using password authentication (https://www.cygwin.com/)
-	2. Parsec streaming application with the Windows machine setup as a host (https://parsecgaming.com/)
-	3. PowerShell
-	4. PSExec (https://docs.microsoft.com/en-us/sysinternals/downloads/psexec)
+	winrun_svr
+	ControlMyMonitor from Nirsoft
+	A DDC-compatible monitor (you can use ControlMyMonitor to check)
 
 	Linux machine (client)
 	----------------------
-	1. Parsec streaming application
-	2. Expect (http://core.tcl.tk/expect/index)
-	3. ssh
+	winrun
+	ddcutil
+	root privleges
 
 INSTALLATION:
 
@@ -21,10 +20,6 @@ INSTALLATION:
 	-------------
 	Extract the contents of the git cloned package and run the "installplay" script.
 
-
-	Windows machine
-	---------------
-	Place RunPrgm.ps1 file in desired location. Take note of where it is.
 
 CONFIGURATION:
 
@@ -57,5 +52,5 @@ HOW TO USE:
 	play -r [PATTERN]
         Search for a matching PATTERN in the games.list file and remove it from the games.list file.
 
-	play --help
+	play -? OR play --help
 	Print help text.
