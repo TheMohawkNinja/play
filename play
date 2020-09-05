@@ -1,7 +1,13 @@
 #!/bin/bash
 
 #Config file location
-config=~/.config/play/config
+path="/home/$USER/.config/play/"
+config="$path"config
+
+if ! [ -f $config ] ; then
+	echo "Config file not found at \"$config\""
+	exit
+fi
 
 #Vars/arrs used for script
 gamecmd="$1"
@@ -10,10 +16,9 @@ line=""
 pathf=""
 ctr=0
 ip=`cat $config | sed -n -e 's/^.*ip=//p'`
-PS=`cat $config | sed -n -e 's/^.*PS=//p'`
-name=`cat $config | sed -n -e 's/^.*name=//p'`
-host=`cat $config | sed -n -e 's/^.*host=//p'`
-id=`cat $config | sed -n -e 's/^.*id=//p'`
+wr=`cat $config | sed -n -e 's/^.*wr=//p'`
+display=`cat $config | sed -n -e 's/^.*display=//p'`
+#name=`cat $config | sed -n -e 's/^.*name=//p'`
 declare -a short
 declare -a long
 declare -a path
@@ -51,60 +56,12 @@ function list_games()
 
 function run_game()
 {
-	#Set variables. Needed to handle strings correctly
-	run_cmd="psexec '\\\\\\\\$ip' -accepteula -nobanner powershell $PS $1 $name start"
-	kill_cmd="psexec '\\\\\\\\$ip' -accepteula -nobanner powershell $PS $1 $name kill $gamecmd"
-	pwd=`cat $config | sed -n -e 's/^.*ssh_pswd=//p'`"\r"
-	expt_pwd_ssh="password:"
-	expt_pwd_parsecd="password"
-	expt_email="e-mail"
-	yes="y\r"
-	email=`cat $config | sed -n -e 's/^.*email=//p'`"\r"
-	server="server"
-	one=`cat $config | sed -n -e 's/^.*server=//p'`"\r"
-
-	#Login to ssh to start game
-	/usr/bin/expect -c "
-	set timeout 120
-	spawn ssh $host+$name@$ip $run_cmd
-	expect $expt_pwd_ssh
-	send -- $pwd
-	sleep 1
-	send -- \x03
-	expect eof"
-
-	#Launch parsecd
-	/usr/bin/expect -c "
-	spawn parsecd peer_id=$id &
-	expect {
-		$expt_email {
-			send -- $email
-			expect $expt_pwd_parsecd
-			send -- $yes
-		}
-
-		$expt_pwd_parsecd {
-			send -- $yes
-		}
-	}
-	#expect $server
-	#send -- $one
-	exec /etc/play/checkpid #Keep parsecd running so long as client stream is running.
-	expect eof"
-
-	#Login to ssh to terminate game
-        /usr/bin/expect -c "
-        set timeout 120
-        spawn ssh $host+$name@$ip $kill_cmd
-        expect $expt_pwd_ssh
-        send -- $pwd
-        sleep 1
-        send -- \x03
-        expect eof"
+	winrun "start $1"
+	sudo chmon $display
 }
 
 #Load games from games.list file
-if [ -f "games.list" ]; then
+if [ -f $path"games.list" ]; then
 
 	#Read games list
 	while IFS= read -r line; do
@@ -112,15 +69,12 @@ if [ -f "games.list" ]; then
 		long[$ctr]=$(echo $line | awk -F, '{print $2}')
 		path[$ctr]=$(echo $line | awk -F, '{print $3}')
 		((ctr++))
-	done < "games.list"
+	done < $path"games.list"
 else
 	#Make games list file if it does not exist
-	echo "./games.list" file  not found, creating!
-	touch games.list;
+	echo $path"games.list" file  not found, creating!
+	touch $path"games.list";
 fi
-
-#Add space for formatting
-echo
 
 #Check for script arguments
 while [ "$#" != "" ]
@@ -153,7 +107,7 @@ do
 		-a)
 			#Add game to list
 			pathf="${4//\\//}"
-			echo  "$2,$3,\"\\\\\\\"\\\"$pathf\\\"\\\\\\\"\"" >> games.list
+			echo "$2,$3,"$pathf" >> "$path"games.list"
 			echo "Added \"$3\" to the games list."
 			break;;
 		-r)
@@ -167,9 +121,8 @@ do
 				echo "Did not find match for \"$2\" in games list."
 			fi
 			break;;
-		--help)
-			clear
-			echo -e "Launch program on remote Windows PC and start streaming service automatically.\n"
+		-? | --help)
+			echo -e "Launch program on remote Windows PC and change monitor inputs automatically.\n"
 			echo -e "USAGE"
 			echo -e "-----"
 			echo -e
@@ -193,7 +146,7 @@ do
 			printf  "\t%-10s %-1s %-50s\n\n" "%APPDATA%" "=" "$APPDATA"
 			echo -e "\e[3mplay -r [PATTERN]\e[0m"
 			echo -e "Search for a matching PATTERN in the games.list file and remove it from the games.list file.\n"
-			echo -e "\e[3mplay --help\e[0m"
+			echo -e "\e[3mplay --help\e[0m OR \e[3mplay -?\e[0m"
 			echo -e "Print this help text.\n"
 			break;;
 		*)
