@@ -15,23 +15,38 @@ prgm=""
 line=""
 pathf=""
 ctr=0
+appID=0
+taskname=""
+result=""
+task=""
 ip=`cat $config | sed -n -e 's/^.*ip=//p'`
 wr=`cat $config | sed -n -e 's/^.*wr=//p'`
 display=`cat $config | sed -n -e 's/^.*display=//p'`
-#name=`cat $config | sed -n -e 's/^.*name=//p'`
+ControlMyMonitor=`cat $config | sed -n -e 's/^.*ControlMyMonitor=//p'`
+ControlMyMonitor=${ControlMyMonitor//\\//}
 declare -a short
 declare -a long
 declare -a path
+declare -a servicename
 
 #Shortcut locations to make adding games easier
 STEAM="steam://rungameid/"
 DESKTOP=`cat $config | sed -n -e 's/^.*desktop=//p'`
 APPDATA=`cat $config | sed -n -e 's/^.*appdata=//p'`
 
-function list_games_with_path()
+function print_normal_header()
 {
-	printf "%-10s           %-25s      %-50s\n" "Command" "Game Title" "Path"
-        echo "---------------------------------------------------------"
+	printf "%-10s           %-25s\n" "Command" "Game Title"
+        echo "--------------------------------"
+}
+function print_verbose_header()
+{
+	printf "%-10s           %-25s      %-50s          %s\n" "Command" "Game Title" "Path" "Task Name"
+        echo "--------------------------------------------------------------------------------------------------------------------------"
+
+}
+function list_games_verbose()
+{
         for (( IFS=" " i=0; i<$ctr; i++ )); do
 		#Remove/replace backslash, quote marks, and path shortcuts from path and print result in table
 		pathf="${path[i]//\\/}"
@@ -39,15 +54,13 @@ function list_games_with_path()
 		pathf="${pathf//%STEAM%/$STEAM}"
 		pathf="${pathf//%DESKTOP%/$DESKTOP}"
 		pathf="${pathf//%APPDATA%/$APPDATA}"
-      		printf "%-15s|     %-25s|     %-50s\n" "${short[i]}" "${long[i]}" "$pathf"
+      		printf "%-15s|     %-25s|     %-50s|         %s\n" "${short[i]}" "${long[i]}" "$pathf" "${servicename[i]}"
         done
 	echo
 }
 
 function list_games()
 {
-        printf "%-10s           %-25s\n" "Command" "Game Title"
-        echo "--------------------------------"
         for (( IFS=" " i=0; i<$ctr; i++ )); do
                 printf "%-15s|     %-25s\n" "${short[i]}" "${long[i]}"
         done
@@ -56,8 +69,17 @@ function list_games()
 
 function run_game()
 {
-	winrun "start $1"
+	echo "Changing monitor input and launching winrun with parameters \"start $1\""
 	sudo chmon $display
+	winrun "start $1"
+
+	while [[ 1 ]]; do
+		if [[ $(winrun "tasklist /fi \"SESSIONNAME eq CONSOLE\" /fo list" | grep -i $task) == "" ]]; then
+			echo "No longer seeing $task running on Window system, changing display input."
+			winrun "run $ControlMyMonitor /SetValue \\\\.\DISPLAY1\Monitor0 60 4"
+			break;
+		fi
+	done
 }
 
 #Load games from games.list file
@@ -68,6 +90,7 @@ if [ -f $path"games.list" ]; then
 		short[$ctr]=$(echo $line | awk -F, '{print $1}')
 		long[$ctr]=$(echo $line | awk -F, '{print $2}')
 		path[$ctr]=$(echo $line | awk -F, '{print $3}')
+		servicename[$ctr]=$(echo $line | awk -F, '{print $4}')
 		((ctr++))
 	done < $path"games.list"
 else
@@ -82,32 +105,32 @@ do
 	case "$1" in
 		-l)
 			#Display games list
-			list_games
+			print_header
+			list_games | sort
 			break;;
-		-lp)
-                        #Display games list with paths
-                        list_games_with_path
+		-lv)
+                        #Display games list with more info
+                        print_verbose_header
+			list_games_verbose | sort
                         break;;
 
 		-f)
 			#Find for parameter and display
-			printf "%-15s      %-25s\n" "Command" "Game Title"
-        		echo "--------------------------------"
-			list_games | grep -i $2
+			print_header
+			list_games | grep -i $2 | sort
 			echo
 			break;;
-		-fp)
+		-fv)
                         #Find for parameter and display
-                        printf "%-15s      %-25s      %-50s\n" "Command" "Game Title" "Path"
-                        echo "---------------------------------------------------------"
-                        list_games_with_path | grep -i $2
+			print_verbose_header
+ 			list_games_verbose | grep -i $2 | sort
                         echo
 			break;;
 
 		-a)
 			#Add game to list
 			pathf="${4//\\//}"
-			echo "$2,$3,"$pathf" >> "$path"games.list"
+			echo "$2,$3,"$pathf",$5 >> "$path"games.list"
 			echo "Added \"$3\" to the games list."
 			break;;
 		-r)
@@ -130,15 +153,14 @@ do
 			echo -e "Launch the game defined by the COMMAND parameter.\n"
 			echo -e "\e[3mplay -l\e[0m"
 			echo -e "Print a formatted table of games saved to the games.list file excluding file paths.\n"
-			echo -e "\e[3mplay -lp\e[0m"
-                        echo -e "Print a formatted table of games saved to the games.list file including file paths.\n"
+			echo -e "\e[3mplay -lv\e[0m"
+                        echo -e "Print a formatted table of games saved to the games.list file including file paths and task names.\n"
 			echo -e "\e[3mplay -f [PATTERN]\e[0m"
 			echo -e "Search for a matching PATTERN in the games.list file and list results excluding file paths.\n"
-			echo -e "\e[3mplay -fp [PATTERN]\e[0m"
-                        echo -e "Search for a matching PATTERN in the games.list file and list results including file paths.\n"
+			echo -e "\e[3mplay -fv [PATTERN]\e[0m"
+                        echo -e "Search for a matching PATTERN in the games.list file and list results including file paths and task names.\n"
 			echo -e "\e[3mplay -a [COMMAND] [TITLE] [PATH]\e[0m"
 			echo -e "Add a game to the list that is located at the PATH on the Windows machine, is started by using the COMMAND parameter, and can be easily referenced in the -l functionality by the game's formal TITLE.\n"
-			echo -e "*** NOTE: Make sure the command is either named the same as, or contains a large section of the name of the name of the .exe file for the name, as this is what the program uses to determine what program it needs to kill upon exiting Parsec. ***\n"
 			echo -e "\tFilepath shortcuts for PATH"
 			echo -e "\t---------------------------"
 			printf  "\t%-10s %-1s %-50s\n" "%STEAM%" "=" "$STEAM"
@@ -146,19 +168,20 @@ do
 			printf  "\t%-10s %-1s %-50s\n\n" "%APPDATA%" "=" "$APPDATA"
 			echo -e "\e[3mplay -r [PATTERN]\e[0m"
 			echo -e "Search for a matching PATTERN in the games.list file and remove it from the games.list file.\n"
-			echo -e "\e[3mplay --help\e[0m OR \e[3mplay -?\e[0m"
+			echo -e "\e[3mplay -?\e[0m OR \e[3mplay --help\e[0m"
 			echo -e "Print this help text.\n"
 			break;;
 		*)
 			#Search for matching game
+			echo -n "Checking if \"$1\" matches a known game in games.list... "
 			shopt -s nocasematch
-
 			for (( i=0; i<$ctr; i++ )); do
 				if [[ "$1" == "${short[i]}" ]]; then
 					path[i]="${path[i]//%STEAM%/$STEAM}"
 					path[i]="${path[i]//%DESKTOP%/$DESKTOP}"
 					path[i]="${path[i]//%APPDATA%/$APPDATA}"
 					prgm="${path[i]}"
+					task="${servicename[i]}"
 					break
 				fi
 			done
@@ -166,8 +189,10 @@ do
 
 			#If there was a match, run program. Otherwise, run first arg as is.
 			if [ "$prgm" != "" ]; then
+				echo "Found!"
 				run_game "$prgm"
 			else
+				echo "Not found!"
 				run_game "$1"
 			fi
 

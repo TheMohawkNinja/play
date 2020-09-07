@@ -1,8 +1,0 @@
-#!/bin/bash
-
-mkdir /etc/play
-mkdir ~/.config/play
-
-cp play /usr/bin/play
-cp checkpid /etc/play/checkpid
-cp config ~/.config/play/config
