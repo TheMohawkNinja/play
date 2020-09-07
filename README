@@ -18,8 +18,7 @@ INSTALLATION:
 
 	Linux machine
 	-------------
-	Extract the contents of the git cloned package and run the "installplay" script.
-
+	Copy "chmon" and "play" to "/usr/bin"
 
 CONFIGURATION:
 
@@ -33,20 +32,18 @@ HOW TO USE:
 	play -l
         Print a formatted table of games saved to the games.list file excluding file paths.
 
-        play -lp
-        Print a formatted table of games saved to the games.list file including file paths.
+        play -lv
+        Print a formatted table of games saved to the games.list file including file paths and task names.
 
 	play -f [PATTERN]
         Search for a matching PATTERN in the games.list file and list results excluding file paths.
 
-        play -fp [PATTERN]
-        Search for a matching PATTERN in the games.list file and list results including file paths.
+        play -fv [PATTERN]
+        Search for a matching PATTERN in the games.list file and list results including file paths and task names.
 
         play -a [COMMAND] [TITLE] [PATH]
         Add a game to the list that is located at the PATH on the Windows machine, is started by using the COMMAND parameter, and can be easily referenced in the -l functionality by the game's formal TITLE.
          
-		*** NOTE: Games that initially run via a launcher program with the actual game being a seperate program may not get auto-killed on exiting the stream. ***
-
 		Filepath shortcuts for PATH can be found in the ~/.config/play/config file and referenced via the --help flag
 
 	play -r [PATTERN]
