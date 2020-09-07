@@ -1,6 +1,6 @@
-#*****************************************#
-#REMEMBER TO PLACE THIS IN ~/.config/play/#
-#*****************************************#
+#*****************************************
+#REMEMBER TO PLACE THIS IN ~/.config/play/
+#*****************************************
 
 #Desktop location for games (I use this due to my personal setup, but you can point it to whereever)
 desktop=
@@ -8,11 +8,11 @@ desktop=
 #Appdata location for games, generally whereever "%localappdata%" takes you in Windows File Explorer
 appdata=
 
-#Location of winrun_svr including name of the program (i.e. "wr=C:\Users\user\Documents\winrun_svr.exe"
+#Location of winrun_svr including name of the program (i.e. "wr=C:\Users\user\Documents\winrun_svr.exe")
 wr=
-
-#Windows user that the game will play on
-name=
 
 #Display number as defined by "sudo ddcutil detect"
 display=
+
+#Full location of ControlMyMonitor on Windows machine including the name of the program
+ControlMyMonitor=
