@@ -37,13 +37,20 @@ APPDATA=`cat $config | sed -n -e 's/^.*appdata=//p'`
 function print_normal_header()
 {
 	printf "%-10s           %-25s\n" "Command" "Game Title"
-        echo "--------------------------------"
+        echo -n "--------------------------------"
 }
 function print_verbose_header()
 {
-	printf "%-10s           %-25s      %-50s          %s\n" "Command" "Game Title" "Path" "Task Name"
-        echo "--------------------------------------------------------------------------------------------------------------------------"
+	printf "%-10s           %-25s      %-46s          %s\n" "Command" "Game Title" "Path" "Task Name"
+        echo -n "--------------------------------------------------------------------------------------------------------------------------"
 
+}
+function list_games()
+{
+        for (( IFS=" " i=0; i<$ctr; i++ )); do
+                printf "%-15s|     %-25s\n" "${short[i]}" "${long[i]}"
+        done
+	echo
 }
 function list_games_verbose()
 {
@@ -54,19 +61,10 @@ function list_games_verbose()
 		pathf="${pathf//%STEAM%/$STEAM}"
 		pathf="${pathf//%DESKTOP%/$DESKTOP}"
 		pathf="${pathf//%APPDATA%/$APPDATA}"
-      		printf "%-15s|     %-25s|     %-50s|         %s\n" "${short[i]}" "${long[i]}" "$pathf" "${servicename[i]}"
+      		printf "%-15s|     %-25s|     %-50s|     %s\n" "${short[i]}" "${long[i]}" "$pathf" "${servicename[i]}"
         done
 	echo
 }
-
-function list_games()
-{
-        for (( IFS=" " i=0; i<$ctr; i++ )); do
-                printf "%-15s|     %-25s\n" "${short[i]}" "${long[i]}"
-        done
-	echo
-}
-
 function run_game()
 {
 	echo "Changing monitor input and launching winrun with parameters \"start $1\""
@@ -105,36 +103,88 @@ do
 	case "$1" in
 		-l)
 			#Display games list
-			print_header
+			if [ $2 ]; then
+				echo "Detected arguments after \"$1\". Ignoring, as these are not used...\n"
+			fi
+
+			print_normal_header
 			list_games | sort
 			break;;
 		-lv)
                         #Display games list with more info
+			if [ $2 ]; then
+				echo "Detected arguments after \"$1\". Ignoring, as these are not used...\n"
+			fi
+
                         print_verbose_header
 			list_games_verbose | sort
                         break;;
 
 		-f)
 			#Find for parameter and display
-			print_header
-			list_games | grep -i $2 | sort
+			if [ ! $2 ]; then
+				echo "No search parameter detected!"
+				break
+			fi
+			if [ $3 ]; then
+				echo "Detected arguments after \"$2\". Ignoring, as these are not used...\n"
+			fi
+
+			print_normal_header
 			echo
+			list_games | grep -i $2 | sort
 			break;;
 		-fv)
                         #Find for parameter and display
+			if [ ! $2 ]; then
+				echo "Missing search parameter!"
+				break
+			fi
+			if [ $3 ]; then
+				echo "Detected arguments after \"$2\". Ignoring, as these are not used...\n"
+			fi
+
 			print_verbose_header
+			echo
  			list_games_verbose | grep -i $2 | sort
-                        echo
 			break;;
 
 		-a)
 			#Add game to list
+			if [ ! $2 ]; then
+				echo "Missing program command string!"
+				break
+
+				elif [ ! $3 ]; then
+					echo "Missing program title!"
+					break
+
+					elif [ ! $4 ]; then
+						echo "Missing program path!"
+						break
+
+						elif [ ! $5 ]; then
+							echo "Missing program task name!"
+							break
+			fi
+			if [ $6 ]; then
+				echo "Detected arguments after \"$5\". Ignoring, as these are not used...\n"
+			fi
+
 			pathf="${4//\\//}"
 			echo "$2,$3,"$pathf",$5 >> "$path"games.list"
 			echo "Added \"$3\" to the games list."
 			break;;
 		-r)
 			#Attempt to remove game from list
+			if [ ! $2 ]; then
+				echo "Missing search parameter!"
+				break
+			fi
+			if [ $3 ]; then
+				echo "Detected arguments after \"$3\". Ignoring, as these are not used...\n"
+			fi
+
 			if grep -q "$2" ./games.list; then
 				match="$(grep "$2" ./games.list | grep -o ',.*,' | head -1)"
 				match="${match//,/}"
@@ -145,6 +195,11 @@ do
 			fi
 			break;;
 		-? | --help)
+			#Print help text
+			if [ $2 ]; then
+				echo "Detected arguments after \"$1\". Ignoring, as these are not used...\n"
+			fi
+
 			echo -e "Launch program on remote Windows PC and change monitor inputs automatically.\n"
 			echo -e "USAGE"
 			echo -e "-----"
@@ -173,6 +228,10 @@ do
 			break;;
 		*)
 			#Search for matching game
+			if [ $2 ]; then
+				echo "Detected arguments after \"$1\". Ignoring, as these are not used...\n"
+			fi
+
 			echo -n "Checking if \"$1\" matches a known game in games.list... "
 			shopt -s nocasematch
 			for (( i=0; i<$ctr; i++ )); do
