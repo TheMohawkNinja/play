@@ -104,7 +104,7 @@ do
 		-l)
 			#Display games list
 			if [ $2 ]; then
-				echo "Detected arguments after \"$1\". Ignoring, as these are not used...\n"
+				echo -e "Detected arguments after \"$1\". Ignoring, as these are not used...\n"
 			fi
 
 			print_normal_header
@@ -113,7 +113,7 @@ do
 		-lv)
                         #Display games list with more info
 			if [ $2 ]; then
-				echo "Detected arguments after \"$1\". Ignoring, as these are not used...\n"
+				echo -e "Detected arguments after \"$1\". Ignoring, as these are not used...\n"
 			fi
 
                         print_verbose_header
@@ -127,7 +127,7 @@ do
 				break
 			fi
 			if [ $3 ]; then
-				echo "Detected arguments after \"$2\". Ignoring, as these are not used...\n"
+				echo -e "Detected arguments after \"$2\". Ignoring, as these are not used...\n"
 			fi
 
 			print_normal_header
@@ -141,7 +141,7 @@ do
 				break
 			fi
 			if [ $3 ]; then
-				echo "Detected arguments after \"$2\". Ignoring, as these are not used...\n"
+				echo -e "Detected arguments after \"$2\". Ignoring, as these are not used...\n"
 			fi
 
 			print_verbose_header
@@ -168,7 +168,7 @@ do
 							break
 			fi
 			if [ $6 ]; then
-				echo "Detected arguments after \"$5\". Ignoring, as these are not used...\n"
+				echo -e "Detected arguments after \"$5\". Ignoring, as these are not used...\n"
 			fi
 
 			pathf="${4//\\//}"
@@ -182,7 +182,7 @@ do
 				break
 			fi
 			if [ $3 ]; then
-				echo "Detected arguments after \"$3\". Ignoring, as these are not used...\n"
+				echo -e "Detected arguments after \"$3\". Ignoring, as these are not used...\n"
 			fi
 
 			if grep -q "$2" ./games.list; then
@@ -197,7 +197,7 @@ do
 		-? | --help)
 			#Print help text
 			if [ $2 ]; then
-				echo "Detected arguments after \"$1\". Ignoring, as these are not used...\n"
+				echo -e "Detected arguments after \"$1\". Ignoring, as these are not used...\n"
 			fi
 
 			echo -e "Launch program on remote Windows PC and change monitor inputs automatically.\n"
@@ -229,7 +229,7 @@ do
 		*)
 			#Search for matching game
 			if [ $2 ]; then
-				echo "Detected arguments after \"$1\". Ignoring, as these are not used...\n"
+				echo -e "Detected arguments after \"$1\". Ignoring, as these are not used...\n"
 			fi
 
 			echo -n "Checking if \"$1\" matches a known game in games.list... "
