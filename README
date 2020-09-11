@@ -41,8 +41,8 @@ HOW TO USE:
         play -fv [PATTERN]
         Search for a matching PATTERN in the games.list file and list results including file paths and task names.
 
-        play -a [COMMAND] [TITLE] [PATH]
-        Add a game to the list that is located at the PATH on the Windows machine, is started by using the COMMAND parameter, and can be easily referenced in the -l functionality by the game's formal TITLE.
+        play -a [COMMAND] [TITLE] [PATH] [TASK]
+        Add a game to the list that is located at the PATH on the Windows machine, is started by using the COMMAND parameter, and can be easily referenced in the -l functionality by the game's formal TITLE, which shows up in Task Manager as TASK (typically a ".exe" file).
          
 		Filepath shortcuts for PATH can be found in the ~/.config/play/config file and referenced via the --help flag
 
