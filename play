@@ -247,7 +247,7 @@ do
 				break
 			fi
 			if [ "$3" ]; then
-				echo -e "Detected arguments after \""$3"\". Ignoring, as these are not used...\n"
+				echo -e "Detected arguments after \""$2"\". Ignoring, as these are not used...\n"
 			fi
 
 			ctr=0
