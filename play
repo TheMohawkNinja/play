@@ -1,8 +1,9 @@
 #!/bin/bash
 
 #Config file location
-path="/home/$USER/.config/play/"
-config="$path"config
+listpath="/home/$USER/.config/play/"
+config="$listpath"config
+games="$listpath"games.list
 
 if ! [ -f $config ] ; then
 	echo "Config file not found at \"$config\""
@@ -34,6 +35,47 @@ STEAM="steam://rungameid/"
 DESKTOP=`cat $config | sed -n -e 's/^.*desktop=//p'`
 APPDATA=`cat $config | sed -n -e 's/^.*appdata=//p'`
 
+function check_for_duplicate()
+{
+	ctr=0
+
+	#Set delimited to comma
+	IFS=','
+
+	while IFS= read -r line; do
+		read -a strarr <<< "$line"
+
+		for (( n=0; n < ${#strarr[*]}; n++)); do
+			if [ "${strarr[n]}" == "$1" ]; then
+				get_record $ctr "$line"
+				echo -e "Duplicate entry for \""$1"\" found:"
+				echo
+				print_verbose_header
+				echo
+				pathf="${path[$ctr]}"
+				format_pathf
+      				print_verbose_record "${short[$ctr]}" "${long[$ctr]}" "$pathf" "${servicename[$ctr]}"
+
+				exit
+			fi
+		done
+		((ctr++))
+	done < $games
+}
+function format_pathf()
+{
+	pathf="${pathf//\"/}"
+	pathf="${pathf//%STEAM%/$STEAM}"
+	pathf="${pathf//%DESKTOP%/$DESKTOP}"
+	pathf="${pathf//%APPDATA%/$APPDATA}"
+}
+function get_record()
+{
+	short[$1]=$(echo "$2" | grep -Po '([^,]+)' | head -1)
+	long[$1]=$(echo "$2" | grep -Po '([^,]+)' | head -2 | tail -1)
+	path[$1]=$(echo "$2" | grep -Po '([^,]+)' | head -3 | tail -1)
+	servicename[$1]=$(echo "$2" | grep -Po '([^,]+)' | head -4 | tail -1)
+}
 function print_normal_header()
 {
 	printf "%-10s           %-25s\n" "Command" "Game Title"
@@ -45,10 +87,18 @@ function print_verbose_header()
         echo -n "--------------------------------------------------------------------------------------------------------------------------"
 
 }
+function print_normal_record()
+{
+	printf "%-15s|     %-25s\n" "$1" "$2"
+}
+function print_verbose_record()
+{
+	printf "%-15s|     %-25s|     %-50s|     %s\n" "$1" "$2" "$3" "$4"
+}
 function list_games()
 {
         for (( IFS=" " i=0; i<$ctr; i++ )); do
-                printf "%-15s|     %-25s\n" "${short[i]}" "${long[i]}"
+                print_normal_record "${short[i]}" "${long[i]}"
         done
 	echo
 }
@@ -57,11 +107,8 @@ function list_games_verbose()
         for (( IFS=" " i=0; i<$ctr; i++ )); do
 		#Remove/replace backslash, quote marks, and path shortcuts from path and print result in table
 		pathf="${path[i]//\\/}"
-		pathf="${pathf//\"/}"
-		pathf="${pathf//%STEAM%/$STEAM}"
-		pathf="${pathf//%DESKTOP%/$DESKTOP}"
-		pathf="${pathf//%APPDATA%/$APPDATA}"
-      		printf "%-15s|     %-25s|     %-50s|     %s\n" "${short[i]}" "${long[i]}" "$pathf" "${servicename[i]}"
+		format_pathf
+      		print_verbose_record "${short[i]}" "${long[i]}" "$pathf" "${servicename[i]}"
         done
 	echo
 }
@@ -81,7 +128,7 @@ function run_game()
 }
 
 #Load games from games.list file
-if [ -f $path"games.list" ]; then
+if [ -f $games ]; then
 
 	#Read games list
 	while IFS= read -r line; do
@@ -90,114 +137,149 @@ if [ -f $path"games.list" ]; then
 		path[$ctr]=$(echo $line | awk -F, '{print $3}')
 		servicename[$ctr]=$(echo $line | awk -F, '{print $4}')
 		((ctr++))
-	done < $path"games.list"
+	done < $games
 else
 	#Make games list file if it does not exist
-	echo $path"games.list" file  not found, creating!
-	touch $path"games.list";
+	echo $games file  not found, creating!
+	touch $games
 fi
 
 #Check for script arguments
 while [ "$#" != "" ]
 do
 	case "$1" in
-		-l)
-			#Display games list
-			if [ $2 ]; then
-				echo -e "Detected arguments after \"$1\". Ignoring, as these are not used...\n"
+		-l)#List games
+
+			if [ "$2" ]; then
+				echo -e "Detected arguments after \""$1"\". Ignoring, as these are not used...\n"
 			fi
 
 			print_normal_header
 			list_games | sort
 			break;;
-		-lv)
-                        #Display games list with more info
-			if [ $2 ]; then
-				echo -e "Detected arguments after \"$1\". Ignoring, as these are not used...\n"
+
+		-lv)#Display games list with more info
+			
+			if [ "$2" ]; then
+				echo -e "Detected arguments after \""$1"\". Ignoring, as these are not used...\n"
 			fi
 
                         print_verbose_header
 			list_games_verbose | sort
                         break;;
 
-		-f)
-			#Find for parameter and display
-			if [ ! $2 ]; then
+		-f)#Find for parameter and display
+
+			if [ ! "$2" ]; then
 				echo "No search parameter detected!"
 				break
 			fi
-			if [ $3 ]; then
-				echo -e "Detected arguments after \"$2\". Ignoring, as these are not used...\n"
+			if [ "$3" ]; then
+				echo -e "Detected arguments after \""$2"\". Ignoring, as these are not used...\n"
 			fi
 
 			print_normal_header
 			echo
-			list_games | grep -i $2 | sort
+			list_games | grep -i "$2" | sort
 			break;;
-		-fv)
-                        #Find for parameter and display
-			if [ ! $2 ]; then
+
+		-fv)#Find for parameter and display with more info
+
+			if [ ! "$2" ]; then
 				echo "Missing search parameter!"
 				break
 			fi
-			if [ $3 ]; then
-				echo -e "Detected arguments after \"$2\". Ignoring, as these are not used...\n"
+			if [ "$3" ]; then
+				echo -e "Detected arguments after \""$2"\". Ignoring, as these are not used...\n"
 			fi
 
 			print_verbose_header
 			echo
- 			list_games_verbose | grep -i $2 | sort
+ 			list_games_verbose | grep -i "$2" | sort
 			break;;
 
-		-a)
-			#Add game to list
-			if [ ! $2 ]; then
+		-a)#Add game to lis
+
+			if [ ! "$2" ]; then
 				echo "Missing program command string!"
 				break
 
-				elif [ ! $3 ]; then
+				elif [ ! "$3" ]; then
 					echo "Missing program title!"
 					break
 
-					elif [ ! $4 ]; then
+					elif [ ! "$4" ]; then
 						echo "Missing program path!"
 						break
 
-						elif [ ! $5 ]; then
+						elif [ ! "$5" ]; then
 							echo "Missing program task name!"
 							break
 			fi
-			if [ $6 ]; then
-				echo -e "Detected arguments after \"$5\". Ignoring, as these are not used...\n"
+			if [ "$6" ]; then
+				echo -e "Detected arguments after \""$5"\". Ignoring, as these are not used...\n"
 			fi
 
-			pathf="${4//\\//}"
-			echo "$2,$3,"$pathf",$5 >> "$path"games.list"
-			echo "Added \"$3\" to the games list."
+			#Check for duplicate entry
+			check_for_duplicate "$2" "$line" $ctr
+			check_for_duplicate "$3" "$line" $ctr
+			check_for_duplicate "$4" "$line" $ctr
+			check_for_duplicate "$5" "$line" $ctr
+
+			#If no duplicate is found, add entry
+			if [ ! $match ]; then
+				pathf="${4//\\//}"
+				echo ""$2","$3","$pathf","$5"" >> "$games"
+				echo "Added the following record:"
+				echo
+				print_verbose_header
+				echo
+				format_pathf
+      				print_verbose_record "$2" "$3" "$pathf" "$5"
+			fi
+
 			break;;
-		-r)
-			#Attempt to remove game from list
-			if [ ! $2 ]; then
+
+		-r)#Attempt to remove game from list
+
+			if [ ! "$2" ]; then
 				echo "Missing search parameter!"
 				break
 			fi
-			if [ $3 ]; then
-				echo -e "Detected arguments after \"$3\". Ignoring, as these are not used...\n"
+			if [ "$3" ]; then
+				echo -e "Detected arguments after \""$3"\". Ignoring, as these are not used...\n"
 			fi
 
-			if grep -q "$2" ./games.list; then
-				match="$(grep "$2" ./games.list | grep -o ',.*,' | head -1)"
-				match="${match//,/}"
-				sed -i "/$match,/d" ./games.list
-				echo "Removed \"$match\" from the games list."
-			else
-				echo "Did not find match for \"$2\" in games list."
+			ctr=0
+			while IFS= read -r line; do
+				if [[ -n $(echo $line | grep "$2") ]]; then
+					match=1
+
+					get_record $ctr "$line"
+					sed -i "/$2/d" $games
+
+					echo "Removed the following record:"
+					echo
+					print_verbose_header
+					echo
+					pathf="${path[$ctr]}"
+					format_pathf
+      					print_verbose_record "${short[$ctr]}" "${long[$ctr]}" "$pathf" "${servicename[$ctr]}"
+					break
+				fi
+				((ctr++))
+			done < $games
+
+
+			if [ ! $match ]; then
+				echo -e "Did not find match for \""$2"\" in \"$games\""
 			fi
 			break;;
-		-? | --help)
-			#Print help text
-			if [ $2 ]; then
-				echo -e "Detected arguments after \"$1\". Ignoring, as these are not used...\n"
+
+		-? | --help)#Print help text
+
+			if [ "$2" ]; then
+				echo -e "Detected arguments after \""$1"\". Ignoring, as these are not used...\n"
 			fi
 
 			echo -e "Launch program on remote Windows PC and change monitor inputs automatically.\n"
@@ -214,8 +296,8 @@ do
 			echo -e "Search for a matching PATTERN in the games.list file and list results excluding file paths.\n"
 			echo -e "\e[3mplay -fv [PATTERN]\e[0m"
                         echo -e "Search for a matching PATTERN in the games.list file and list results including file paths and task names.\n"
-			echo -e "\e[3mplay -a [COMMAND] [TITLE] [PATH]\e[0m"
-			echo -e "Add a game to the list that is located at the PATH on the Windows machine, is started by using the COMMAND parameter, and can be easily referenced in the -l functionality by the game's formal TITLE.\n"
+			echo -e "\e[3mplay -a [COMMAND] [TITLE] [PATH] [TASK]\e[0m"
+			echo -e "Add a game to the list that is located at the PATH on the Windows machine, is started by using the COMMAND parameter, and can be easily referenced in the -l functionality by the game's formal TITLE, which shows up in task manager as TASK (typically a \".exe\" file).\n"
 			echo -e "\tFilepath shortcuts for PATH"
 			echo -e "\t---------------------------"
 			printf  "\t%-10s %-1s %-50s\n" "%STEAM%" "=" "$STEAM"
@@ -226,13 +308,14 @@ do
 			echo -e "\e[3mplay -?\e[0m OR \e[3mplay --help\e[0m"
 			echo -e "Print this help text.\n"
 			break;;
-		*)
-			#Search for matching game
-			if [ $2 ]; then
-				echo -e "Detected arguments after \"$1\". Ignoring, as these are not used...\n"
+
+		*)#Search for matching game
+
+			if [ "$2" ]; then
+				echo -e "Detected arguments after \""$1"\". Ignoring, as these are not used...\n"
 			fi
 
-			echo -n "Checking if \"$1\" matches a known game in games.list... "
+			echo -n "Checking if \""$1"\" matches a known game in games.list... "
 			shopt -s nocasematch
 			for (( i=0; i<$ctr; i++ )); do
 				if [[ "$1" == "${short[i]}" ]]; then
