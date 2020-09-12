@@ -16,10 +16,12 @@ prgm=""
 line=""
 pathf=""
 ctr=0
+rctr=0
 appID=0
 taskname=""
 result=""
 task=""
+answer=""
 ip=`cat $config | sed -n -e 's/^.*ip=//p'`
 wr=`cat $config | sed -n -e 's/^.*wr=//p'`
 display=`cat $config | sed -n -e 's/^.*display=//p'`
@@ -37,29 +39,32 @@ APPDATA=`cat $config | sed -n -e 's/^.*appdata=//p'`
 
 function check_for_duplicate()
 {
-	ctr=0
+	dctr=0
 
 	#Set delimited to comma
 	IFS=','
 
-	while IFS= read -r line; do
+	while IFS= read -r line
+	do
 		read -a strarr <<< "$line"
 
-		for (( n=0; n < ${#strarr[*]}; n++)); do
-			if [ "${strarr[n]}" == "$1" ]; then
-				get_record $ctr "$line"
+		for (( n=0; n < ${#strarr[*]}; n++))
+		do
+			if [ "${strarr[n]}" == "$1" ]
+			then
+				get_record $dctr "$line"
 				echo -e "Duplicate entry for \""$1"\" found:"
 				echo
 				print_verbose_header
 				echo
-				pathf="${path[$ctr]}"
+				pathf="${path[$dctr]}"
 				format_pathf
-      				print_verbose_record "${short[$ctr]}" "${long[$ctr]}" "$pathf" "${servicename[$ctr]}"
+      				print_verbose_record "${short[$dctr]}" "${long[$dctr]}" "$pathf" "${servicename[$dctr]}"
 
 				exit
 			fi
 		done
-		((ctr++))
+		((dctr++))
 	done < $games
 }
 function format_pathf()
@@ -85,7 +90,6 @@ function print_verbose_header()
 {
 	printf "%-10s           %-25s      %-46s          %s\n" "Command" "Game Title" "Path" "Task Name"
         echo -n "--------------------------------------------------------------------------------------------------------------------------"
-
 }
 function print_normal_record()
 {
@@ -97,14 +101,16 @@ function print_verbose_record()
 }
 function list_games()
 {
-        for (( IFS=" " i=0; i<$ctr; i++ )); do
-                print_normal_record "${short[i]}" "${long[i]}"
+        for (( IFS=" " i=0; i<$ctr; i++ ))
+	do
+		print_normal_record "${short[i]}" "${long[i]}"
         done
 	echo
 }
 function list_games_verbose()
 {
-        for (( IFS=" " i=0; i<$ctr; i++ )); do
+        for (( IFS=" " i=0; i<$ctr; i++ ))
+	do
 		#Remove/replace backslash, quote marks, and path shortcuts from path and print result in table
 		pathf="${path[i]//\\/}"
 		format_pathf
@@ -114,12 +120,20 @@ function list_games_verbose()
 }
 function run_game()
 {
+	isRunning=0
+
 	echo "Changing monitor input and launching winrun with parameters \"start $1\""
 	sudo chmon $display
 	winrun "start $1"
 
-	while [[ 1 ]]; do
-		if [[ $(winrun "tasklist /fi \"SESSIONNAME eq CONSOLE\" /fo list" | grep -i $task) == "" ]]; then
+	while [[ 1 ]]
+	do
+		#Wait for program to actually show up in Task Manager (accounts for user messing around in launcher
+		if [ -n $(winrun "tasklist /fi \"SESSIONNAME eq CONSOLE\" /fo list" | grep -i $task) ] && [!isRunning]; then
+			isRunning=1
+
+		#Switch monitor inputs when program is no longer running
+		elif [ -z $(winrun "tasklist /fi \"SESSIONNAME eq CONSOLE\" /fo list" | grep -i $task) ] && [isRunning]; then
 			echo "No longer seeing $task running on Window system, changing display input."
 			winrun "run $ControlMyMonitor /SetValue \\\\.\DISPLAY1\Monitor0 60 4"
 			break;
@@ -128,10 +142,12 @@ function run_game()
 }
 
 #Load games from games.list file
-if [ -f $games ]; then
+if [ -f $games ]
+then
 
 	#Read games list
-	while IFS= read -r line; do
+	while IFS= read -r line
+	do
 		short[$ctr]=$(echo $line | awk -F, '{print $1}')
 		long[$ctr]=$(echo $line | awk -F, '{print $2}')
 		path[$ctr]=$(echo $line | awk -F, '{print $3}')
@@ -150,7 +166,8 @@ do
 	case "$1" in
 		-l)#List games
 
-			if [ "$2" ]; then
+			if [ "$2" ]
+			then
 				echo -e "Detected arguments after \""$1"\". Ignoring, as these are not used...\n"
 			fi
 
@@ -160,7 +177,8 @@ do
 
 		-lv)#Display games list with more info
 			
-			if [ "$2" ]; then
+			if [ "$2" ]
+			then
 				echo -e "Detected arguments after \""$1"\". Ignoring, as these are not used...\n"
 			fi
 
@@ -170,11 +188,13 @@ do
 
 		-f)#Find for parameter and display
 
-			if [ ! "$2" ]; then
+			if [ ! "$2" ]
+			then
 				echo "No search parameter detected!"
 				break
 			fi
-			if [ "$3" ]; then
+			if [ "$3" ]
+			then
 				echo -e "Detected arguments after \""$2"\". Ignoring, as these are not used...\n"
 			fi
 
@@ -185,11 +205,13 @@ do
 
 		-fv)#Find for parameter and display with more info
 
-			if [ ! "$2" ]; then
+			if [ ! "$2" ]
+			then
 				echo "Missing search parameter!"
 				break
 			fi
-			if [ "$3" ]; then
+			if [ "$3" ]
+			then
 				echo -e "Detected arguments after \""$2"\". Ignoring, as these are not used...\n"
 			fi
 
@@ -200,34 +222,39 @@ do
 
 		-a)#Add game to lis
 
-			if [ ! "$2" ]; then
+			if [ ! "$2" ]
+			then
 				echo "Missing program command string!"
 				break
 
-				elif [ ! "$3" ]; then
+				elif [ ! "$3" ]
+				then
 					echo "Missing program title!"
 					break
 
-					elif [ ! "$4" ]; then
+					elif [ ! "$4" ]
+					then
 						echo "Missing program path!"
 						break
 
-						elif [ ! "$5" ]; then
+						elif [ ! "$5" ]
+						then
 							echo "Missing program task name!"
 							break
 			fi
-			if [ "$6" ]; then
+			if [ "$6" ]
+			then
 				echo -e "Detected arguments after \""$5"\". Ignoring, as these are not used...\n"
 			fi
 
 			#Check for duplicate entry
-			check_for_duplicate "$2" "$line" $ctr
-			check_for_duplicate "$3" "$line" $ctr
-			check_for_duplicate "$4" "$line" $ctr
-			check_for_duplicate "$5" "$line" $ctr
+			check_for_duplicate "$2"
+			check_for_duplicate "$3"
+			check_for_duplicate "$4"
 
 			#If no duplicate is found, add entry
-			if [ ! $match ]; then
+			if [ ! $match ]
+			then
 				pathf="${4//\\//}"
 				echo ""$2","$3","$pathf","$5"" >> "$games"
 				echo "Added the following record:"
@@ -242,43 +269,82 @@ do
 
 		-r)#Attempt to remove game from list
 
-			if [ ! "$2" ]; then
+			if [ ! "$2" ]
+			then
 				echo "Missing search parameter!"
 				break
 			fi
-			if [ "$3" ]; then
+			if [ "$3" ]
+			then
 				echo -e "Detected arguments after \""$2"\". Ignoring, as these are not used...\n"
 			fi
 
-			ctr=0
-			while IFS= read -r line; do
-				if [[ -n $(echo $line | grep "$2") ]]; then
+			rctr=0
+			while IFS= read -r line
+			do
+				if [[ -n $(echo $line | grep "$2") ]]
+				then
 					match=1
 
-					get_record $ctr "$line"
-					sed -i "/$2/d" $games
-
-					echo "Removed the following record:"
+					get_record $rctr "$line"
+					echo "Discovered the following matching record:"
 					echo
 					print_verbose_header
 					echo
-					pathf="${path[$ctr]}"
+					pathf="${path[$rctr]}"
 					format_pathf
-      					print_verbose_record "${short[$ctr]}" "${long[$ctr]}" "$pathf" "${servicename[$ctr]}"
+      					print_verbose_record "${short[$rctr]}" "${long[$rctr]}" "$pathf" "${servicename[$rctr]}"
+					echo					
+
+					while [[ $answer != "y" && $answer != "n" ]]
+					do
+						echo -n "Remove this record? (y/n) "
+						read -r answer </dev/tty
+					done
+
+					if [ $answer == "n" ]
+					then
+						echo "$games not changed."
+						break
+					fi
+
+					echo
+					echo "Removed the following record:"
+					print_verbose_record "${short[$rctr]}" "${long[$rctr]}" "$pathf" "${servicename[$rctr]}"
+					#Shift all entries beyond the removed entry down one
+					for (( i=$rctr; i<ctr; i++ ))
+					do
+						short[i]=${short[i+1]}						
+						long[i]=${long[i+1]}
+						path[i]=${path[i+1]}
+						servicename[i]=${servicename[i+1]}
+					done
+
+					#Rebuild games.list
+					cp $games $games.bak
+					rm $games
+					for (( i=0; i<(ctr-1); i++ ))
+					do
+						echo "${short[i]}","${long[i]}","${path[i]}","${servicename[i]}" >> $games
+					done
+
 					break
 				fi
-				((ctr++))
+
+				((rctr++))
 			done < $games
 
 
-			if [ ! $match ]; then
+			if [ ! $match ]
+			then
 				echo -e "Did not find match for \""$2"\" in \"$games\""
 			fi
 			break;;
 
 		-? | --help)#Print help text
 
-			if [ "$2" ]; then
+			if [ "$2" ]
+			then
 				echo -e "Detected arguments after \""$1"\". Ignoring, as these are not used...\n"
 			fi
 
@@ -304,20 +370,22 @@ do
 			printf  "\t%-10s %-1s %-50s\n" "%DESKTOP%" "=" "$DESKTOP"
 			printf  "\t%-10s %-1s %-50s\n\n" "%APPDATA%" "=" "$APPDATA"
 			echo -e "\e[3mplay -r [PATTERN]\e[0m"
-			echo -e "Search for a matching PATTERN in the games.list file and remove it from the games.list file.\n"
+			echo -e "Search for a matching PATTERN in the games.list file and remove it from the games.list file. This will generate a games.list.bak file, which is the games.list file before the specified program is removed.\n"
 			echo -e "\e[3mplay -?\e[0m OR \e[3mplay --help\e[0m"
 			echo -e "Print this help text.\n"
 			break;;
 
 		*)#Search for matching game
 
-			if [ "$2" ]; then
+			if [ "$2" ]
+			then
 				echo -e "Detected arguments after \""$1"\". Ignoring, as these are not used...\n"
 			fi
 
 			echo -n "Checking if \""$1"\" matches a known game in games.list... "
 			shopt -s nocasematch
-			for (( i=0; i<$ctr; i++ )); do
+			for (( i=0; i<$ctr; i++ ))
+			do
 				if [[ "$1" == "${short[i]}" ]]; then
 					path[i]="${path[i]//%STEAM%/$STEAM}"
 					path[i]="${path[i]//%DESKTOP%/$DESKTOP}"
@@ -330,7 +398,8 @@ do
 			shopt -u nocasematch
 
 			#If there was a match, run program. Otherwise, run first arg as is.
-			if [ "$prgm" != "" ]; then
+			if [ "$prgm" != "" ]
+			then
 				echo "Found!"
 				run_game "$prgm"
 			else
