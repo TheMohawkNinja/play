@@ -47,7 +47,7 @@ HOW TO USE:
 		Filepath shortcuts for PATH can be found in the ~/.config/play/config file and referenced via the --help flag
 
 	play -r [PATTERN]
-        Search for a matching PATTERN in the games.list file and remove it from the games.list file.
+        Search for a matching PATTERN in the games.list file and remove it from the games.list file. This will generate a games.list.bak file, which is the games.list file before the specified program is removed.
 
 	play -? OR play --help
 	Print help text.
