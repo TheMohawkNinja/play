@@ -190,7 +190,7 @@ do
 
 			if [ ! "$2" ]
 			then
-				echo "No search parameter detected!"
+				echo "Missing search parameter!" >&2
 				break
 			fi
 			if [ "$3" ]
@@ -207,7 +207,7 @@ do
 
 			if [ ! "$2" ]
 			then
-				echo "Missing search parameter!"
+				echo "Missing search parameter!" >&2
 				break
 			fi
 			if [ "$3" ]
@@ -224,22 +224,22 @@ do
 
 			if [ ! "$2" ]
 			then
-				echo "Missing program command string!"
+				echo "Missing program command string!" >&2
 				break
 
 				elif [ ! "$3" ]
 				then
-					echo "Missing program title!"
+					echo "Missing program title!" >&2
 					break
 
 					elif [ ! "$4" ]
 					then
-						echo "Missing program path!"
+						echo "Missing program path!" >&2
 						break
 
 						elif [ ! "$5" ]
 						then
-							echo "Missing program task name!"
+							echo "Missing program task name!" >&2
 							break
 			fi
 			if [ "$6" ]
@@ -271,7 +271,7 @@ do
 
 			if [ ! "$2" ]
 			then
-				echo "Missing search parameter!"
+				echo "Missing search parameter!" >&2
 				break
 			fi
 			if [ "$3" ]
