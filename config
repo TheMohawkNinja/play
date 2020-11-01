@@ -16,3 +16,21 @@ display=
 
 #Full location of ControlMyMonitor on Windows machine including the name of the program
 ControlMyMonitor=
+
+#Location of usbip.exe on Windows machine including the name of the program
+usbip=
+
+#Keyboard file descriptor location. Search in /dev/input/by-id for the file name. It should hopefully be obvious, but if not, run "ls" while the device is and is not plugged in to see which file disappears.
+keyFD=
+
+#USB busid of keyboard as defined by "usbip list -l"
+keyboard=
+
+#USB busid of mouse as defined by "usbip list -l"
+mouse=
+
+#IP address of Windows machine
+IP=
+
+#Port that chin will connect to in order to communicate with chin_win. This port must be the same as is configured for chin_win
+port=
