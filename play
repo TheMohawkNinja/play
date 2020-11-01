@@ -48,7 +48,7 @@ function check_for_duplicate()
 {
 	dctr=0
 
-	#Set delimited to comma
+	#Set delimiter to comma
 	IFS=','
 
 	while IFS= read -r line
