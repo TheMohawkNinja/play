@@ -1,5 +1,8 @@
 #!/bin/bash
 
+oLang=$LANG oLcAll=$LC_ALL
+LANG=C LC_ALL=C
+
 #Config file location
 listpath="/home/$USER/.config/play/"
 config="$listpath"config
@@ -22,6 +25,10 @@ taskname=""
 result=""
 task=""
 answer=""
+longestshort=0
+longestlong=0
+longestpathf=0
+longestservicename=0
 ip=`cat $config | sed -n -e 's/^.*ip=//p'`
 wr=`cat $config | sed -n -e 's/^.*wr=//p'`
 display=`cat $config | sed -n -e 's/^.*display=//p'`
@@ -74,6 +81,46 @@ function format_pathf()
 	pathf="${pathf//%DESKTOP%/$DESKTOP}"
 	pathf="${pathf//%APPDATA%/$APPDATA}"
 }
+function get_normal_header_spacing()
+{
+	for (( IFS=" " i=0; i<$ctr; i++ ))
+	do
+		if [ "${#short[i]}" -gt "$longestshort" ]
+		then
+			longestshort="${#short[i]}"
+		fi
+		if [ "${#long[i]}" -gt "$longestlong" ]
+		then
+			longestlong="${#long[i]}"
+		fi
+        done
+}
+function get_verbose_header_spacing()
+{
+	for (( IFS=" " i=0; i<$ctr; i++ ))
+	do
+		if [ "${#short[i]}" -gt "$longestshort" ]
+		then
+			longestshort="${#short[i]}"
+		fi
+		if [ "${#long[i]}" -gt "$longestlong" ]
+		then
+			longestlong="${#long[i]}"
+		fi
+
+		pathf="${path[i]}"
+		format_pathf
+
+		if [ "${#pathf}" -gt "$longestpathf" ]
+		then
+			longestpathf="${#pathf}"
+		fi
+		if [ "${#servicename[i]}" -gt "$longestservicename" ]
+		then
+			longestservicename="${#servicename[i]}"
+		fi
+        done
+}
 function get_record()
 {
 	short[$1]=$(echo "$2" | grep -Po '([^,]+)' | head -1)
@@ -83,21 +130,57 @@ function get_record()
 }
 function print_normal_header()
 {
-	printf "%-10s           %-25s\n" "Command" "Game Title"
-        echo -n "--------------------------------"
+	printf "%-${longestshort}s   %-${longestlong}s\n" "Command" "Game Title"
+
+	for (( i=0; i<$(($longestshort + $longestlong + 2)); i++ ))
+	do
+		echo -n "-"
+	done
 }
 function print_verbose_header()
 {
-	printf "%-10s           %-25s      %-46s          %s\n" "Command" "Game Title" "Path" "Task Name"
-        echo -n "--------------------------------------------------------------------------------------------------------------------------"
+	printf "%-${longestshort}s   %-${longestlong}s   %-${longestpathf}s   %s\n" "Command" "Game Title" "Path" "Task Name"
+        
+	for (( i=0; i<$(($longestshort + $longestlong + $longestpathf + $longestservicename + 4)); i++ ))
+	do
+		echo -n "-"
+	done
 }
 function print_normal_record()
 {
-	printf "%-15s|     %-25s\n" "$1" "$2"
+	printf "%-${longestshort}s | %-${longestlong}s\n" "$1" "$2"
 }
 function print_verbose_record()
 {
-	printf "%-15s|     %-25s|     %-50s|     %s\n" "$1" "$2" "$3" "$4"
+	printf "%-${longestshort}s | %-${longestlong}s | %-${longestpathf}s | %s\n" "$1" "$2" "$3" "$4"
+}
+function print_help()
+{
+	echo -e "Launch program on remote Windows PC and change monitor inputs automatically.\n"
+	echo -e "USAGE"
+	echo -e "-----"
+	echo -e
+	echo -e "\e[3mplay [COMMAND]\e[0m"
+	echo -e "Launch the game defined by the COMMAND parameter.\n"
+	echo -e "\e[3mplay -l\e[0m"
+	echo -e "Print a formatted table of games saved to the games.list file excluding file paths.\n"
+	echo -e "\e[3mplay -lv\e[0m"
+	echo -e "Print a formatted table of games saved to the games.list file including file paths and task names.\n"
+	echo -e "\e[3mplay -f [PATTERN]\e[0m"
+	echo -e "Search for a matching PATTERN in the games.list file and list results excluding file paths.\n"
+	echo -e "\e[3mplay -fv [PATTERN]\e[0m"
+	echo -e "Search for a matching PATTERN in the games.list file and list results including file paths and task names.\n"
+	echo -e "\e[3mplay -a [COMMAND] [TITLE] [PATH] [TASK]\e[0m"
+	echo -e "Add a game to the list that is located at the PATH on the Windows machine, is started by using the COMMAND parameter, and can be easily referenced in the -l functionality by the game's formal TITLE, which shows up in task manager as TASK (typically a \".exe\" file).\n"
+	echo -e "\tFilepath shortcuts for PATH"
+	echo -e "\t---------------------------"
+	printf  "\t%-10s %-1s %-50s\n" "%STEAM%" "=" "$STEAM"
+	printf  "\t%-10s %-1s %-50s\n" "%DESKTOP%" "=" "$DESKTOP"
+	printf  "\t%-10s %-1s %-50s\n\n" "%APPDATA%" "=" "$APPDATA"
+	echo -e "\e[3mplay -r [PATTERN]\e[0m"
+	echo -e "Search for a matching PATTERN in the games.list file and remove it from the games.list file. This will generate a games.list.bak file, which is the games.list file before the specified program is removed.\n"
+	echo -e "\e[3mplay -?\e[0m OR \e[3mplay --help\e[0m"
+	echo -e "Print this help text.\n"
 }
 function list_games()
 {
@@ -171,6 +254,7 @@ do
 				echo -e "Detected arguments after \""$1"\". Ignoring, as these are not used...\n"
 			fi
 
+			get_normal_header_spacing
 			print_normal_header
 			list_games | sort
 			break;;
@@ -182,6 +266,7 @@ do
 				echo -e "Detected arguments after \""$1"\". Ignoring, as these are not used...\n"
 			fi
 
+			get_verbose_header_spacing
                         print_verbose_header
 			list_games_verbose | sort
                         break;;
@@ -198,6 +283,7 @@ do
 				echo -e "Detected arguments after \""$2"\". Ignoring, as these are not used...\n"
 			fi
 
+			get_normal_header_spacing
 			print_normal_header
 			echo
 			list_games | grep -i "$2" | sort
@@ -215,12 +301,13 @@ do
 				echo -e "Detected arguments after \""$2"\". Ignoring, as these are not used...\n"
 			fi
 
+			get_verbose_header_spacing
 			print_verbose_header
 			echo
  			list_games_verbose | grep -i "$2" | sort
 			break;;
 
-		-a)#Add game to lis
+		-a)#Add game to list
 
 			if [ ! "$2" ]
 			then
@@ -310,7 +397,10 @@ do
 
 					echo
 					echo "Removed the following record:"
+					print_verbose_header
+					echo
 					print_verbose_record "${short[$rctr]}" "${long[$rctr]}" "$pathf" "${servicename[$rctr]}"
+
 					#Shift all entries beyond the removed entry down one
 					for (( i=$rctr; i<ctr; i++ ))
 					do
@@ -348,34 +438,16 @@ do
 				echo -e "Detected arguments after \""$1"\". Ignoring, as these are not used...\n"
 			fi
 
-			echo -e "Launch program on remote Windows PC and change monitor inputs automatically.\n"
-			echo -e "USAGE"
-			echo -e "-----"
-			echo -e
-			echo -e "\e[3mplay [COMMAND]\e[0m"
-			echo -e "Launch the game defined by the COMMAND parameter.\n"
-			echo -e "\e[3mplay -l\e[0m"
-			echo -e "Print a formatted table of games saved to the games.list file excluding file paths.\n"
-			echo -e "\e[3mplay -lv\e[0m"
-                        echo -e "Print a formatted table of games saved to the games.list file including file paths and task names.\n"
-			echo -e "\e[3mplay -f [PATTERN]\e[0m"
-			echo -e "Search for a matching PATTERN in the games.list file and list results excluding file paths.\n"
-			echo -e "\e[3mplay -fv [PATTERN]\e[0m"
-                        echo -e "Search for a matching PATTERN in the games.list file and list results including file paths and task names.\n"
-			echo -e "\e[3mplay -a [COMMAND] [TITLE] [PATH] [TASK]\e[0m"
-			echo -e "Add a game to the list that is located at the PATH on the Windows machine, is started by using the COMMAND parameter, and can be easily referenced in the -l functionality by the game's formal TITLE, which shows up in task manager as TASK (typically a \".exe\" file).\n"
-			echo -e "\tFilepath shortcuts for PATH"
-			echo -e "\t---------------------------"
-			printf  "\t%-10s %-1s %-50s\n" "%STEAM%" "=" "$STEAM"
-			printf  "\t%-10s %-1s %-50s\n" "%DESKTOP%" "=" "$DESKTOP"
-			printf  "\t%-10s %-1s %-50s\n\n" "%APPDATA%" "=" "$APPDATA"
-			echo -e "\e[3mplay -r [PATTERN]\e[0m"
-			echo -e "Search for a matching PATTERN in the games.list file and remove it from the games.list file. This will generate a games.list.bak file, which is the games.list file before the specified program is removed.\n"
-			echo -e "\e[3mplay -?\e[0m OR \e[3mplay --help\e[0m"
-			echo -e "Print this help text.\n"
+			print_help
 			break;;
 
 		*)#Search for matching game
+
+			if [ ! "$1" ]
+			then
+				print_help
+				break;
+			fi
 
 			if [ "$2" ]
 			then
@@ -410,4 +482,7 @@ do
 			break;;
 	esac
 	shift
+
+#LANG=$oLang LC_ALL=$oLcAll
+
 done
