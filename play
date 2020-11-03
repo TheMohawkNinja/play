@@ -1,14 +1,12 @@
 #!/bin/bash
 
-oLang=$LANG oLcAll=$LC_ALL
-LANG=C LC_ALL=C
-
 #Config file location
 listpath="/home/$USER/.config/play/"
 config="$listpath"config
 games="$listpath"games.list
 
-if ! [ -f $config ] ; then
+if ! [ -f $config ]
+then
 	echo "Config file not found at \"$config\""
 	exit
 fi
@@ -120,6 +118,31 @@ function get_verbose_header_spacing()
 			longestservicename="${#servicename[i]}"
 		fi
         done
+
+	#For -a option
+	if [ "$1" ]
+	then
+		if [ "${#1}" -gt "$longestshort" ]
+		then
+			longestshort="${#1}"
+		fi
+		if [ "${#2}" -gt "$longestlong" ]
+		then
+			longestlong="${#2}"
+		fi
+
+		pathf="${3}"
+		format_pathf
+
+		if [ "${#pathf}" -gt "$longestpathf" ]
+		then
+			longestpathf="${#pathf}"
+		fi
+		if [ "${#4}" -gt "$longestservicename" ]
+		then
+			longestservicename="${#4}"
+		fi
+	fi
 }
 function get_record()
 {
@@ -130,29 +153,65 @@ function get_record()
 }
 function print_normal_header()
 {
-	printf "%-${longestshort}s   %-${longestlong}s\n" "Command" "Game Title"
+	printf "%-$((${longestshort}+1))s  %-$((${longestlong}))s\n" "Command" "Game Title"
 
-	for (( i=0; i<$(($longestshort + $longestlong + 2)); i++ ))
+	for (( i=0; i<=$longestshort; i++ ))
 	do
-		echo -n "-"
+		echo -n "─"
 	done
+
+	echo -n ┬
+
+	for (( i=0; i<=$longestlong; i++ ))
+	do
+		echo -n "─"
+	done
+
+	echo
 }
 function print_verbose_header()
 {
-	printf "%-${longestshort}s   %-${longestlong}s   %-${longestpathf}s   %s\n" "Command" "Game Title" "Path" "Task Name"
-        
-	for (( i=0; i<$(($longestshort + $longestlong + $longestpathf + $longestservicename + 4)); i++ ))
+	printf "%-$((${longestshort}+1))s  %-$((${longestlong}))s   %-$((${longestpathf}))s   %-$((${longestservicename}))s\n" "Command" "Game Title" "Path" "File Name"
+
+	for (( i=0; i<=$longestshort; i++ ))
 	do
-		echo -n "-"
+		echo -n "─"
 	done
+
+	echo -n ┬
+
+	for (( i=0; i<=$(($longestlong+1)); i++ ))
+	do
+		echo -n "─"
+	done
+	
+	echo -n ┬
+
+	for (( i=0; i<=$(($longestpathf+1)); i++ ))
+	do
+		echo -n "─"
+	done
+
+	echo -n ┬
+
+	for (( i=0; i<=$longestservicename; i++ ))
+	do
+		echo -n "─"
+	done
+
+	echo
 }
 function print_normal_record()
 {
-	printf "%-${longestshort}s | %-${longestlong}s\n" "$1" "$2"
+	printf '%s%*s │ %s%*s\n' "$1" "$(($longestshort - ${#1}))" "" \
+				 "$2" "$(($longestlong - ${#2}))" "";
 }
 function print_verbose_record()
 {
-	printf "%-${longestshort}s | %-${longestlong}s | %-${longestpathf}s | %s\n" "$1" "$2" "$3" "$4"
+	printf '%s%*s │ %s%*s │ %s%*s │ %s%*s\n' "$1" "$(($longestshort - ${#1}))" "" \
+						 "$2" "$(($longestlong - ${#2}))" "" \
+						 "$3" "$(($longestpathf - ${#3}))" "" \
+						 "$4" "$(($longestservicename - ${#4}))" "";
 }
 function print_help()
 {
@@ -184,22 +243,24 @@ function print_help()
 }
 function list_games()
 {
-        for (( IFS=" " i=0; i<$ctr; i++ ))
+	for (( i=0; i<$ctr; i++ ))
 	do
-		print_normal_record "${short[i]}" "${long[i]}"
+		printf '%s%*s │ %s%*s\n' "${short[i]}" "$(($longestshort - ${#short[i]}))" "" \
+					 "${long[i]}" "$(($longestlong - ${#long[i]}))" "";
+
         done
-	echo
 }
 function list_games_verbose()
 {
-        for (( IFS=" " i=0; i<$ctr; i++ ))
+        for (( i=0; i<$ctr; i++ ))
 	do
-		#Remove/replace backslash, quote marks, and path shortcuts from path and print result in table
 		pathf="${path[i]//\\/}"
 		format_pathf
-      		print_verbose_record "${short[i]}" "${long[i]}" "$pathf" "${servicename[i]}"
+		printf '%s%*s │ %s%*s │ %s%*s │ %s%*s\n' "${short[i]}" "$(($longestshort - ${#short[i]}))" "" \
+							 "${long[i]}" "$(($longestlong - ${#long[i]}))" "" \
+							 "${pathf}" "$(($longestpathf - ${#pathf}))" "" \
+							 "${servicename[i]}" "$(($longestservicename - ${#servicename[i]}))" "";
         done
-	echo
 }
 function run_game()
 {
@@ -256,7 +317,7 @@ do
 
 			get_normal_header_spacing
 			print_normal_header
-			list_games | sort
+			list_games
 			break;;
 
 		-lv)#Display games list with more info
@@ -267,8 +328,8 @@ do
 			fi
 
 			get_verbose_header_spacing
-                        print_verbose_header
-			list_games_verbose | sort
+			print_verbose_header
+			list_games_verbose
                         break;;
 
 		-f)#Find for parameter and display
@@ -285,8 +346,7 @@ do
 
 			get_normal_header_spacing
 			print_normal_header
-			echo
-			list_games | grep -i "$2" | sort
+			list_games | grep -i "$2"
 			break;;
 
 		-fv)#Find for parameter and display with more info
@@ -303,8 +363,7 @@ do
 
 			get_verbose_header_spacing
 			print_verbose_header
-			echo
- 			list_games_verbose | grep -i "$2" | sort
+ 			list_games_verbose | grep -i "$2"
 			break;;
 
 		-a)#Add game to list
@@ -346,9 +405,8 @@ do
 				echo ""$2","$3","$pathf","$5"" >> "$games"
 				echo "Added the following record:"
 				echo
+				get_verbose_header_spacing "$2" "$3" "$pathf" "$5"
 				print_verbose_header
-				echo
-				format_pathf
       				print_verbose_record "$2" "$3" "$pathf" "$5"
 			fi
 
@@ -376,8 +434,8 @@ do
 					get_record $rctr "$line"
 					echo "Discovered the following matching record:"
 					echo
+					get_verbose_header_spacing
 					print_verbose_header
-					echo
 					pathf="${path[$rctr]}"
 					format_pathf
       					print_verbose_record "${short[$rctr]}" "${long[$rctr]}" "$pathf" "${servicename[$rctr]}"
@@ -398,7 +456,6 @@ do
 					echo
 					echo "Removed the following record:"
 					print_verbose_header
-					echo
 					print_verbose_record "${short[$rctr]}" "${long[$rctr]}" "$pathf" "${servicename[$rctr]}"
 
 					#Shift all entries beyond the removed entry down one
@@ -458,7 +515,8 @@ do
 			shopt -s nocasematch
 			for (( i=0; i<$ctr; i++ ))
 			do
-				if [[ "$1" == "${short[i]}" ]]; then
+				if [[ "$1" == "${short[i]}" ]]
+				then
 					path[i]="${path[i]//%STEAM%/$STEAM}"
 					path[i]="${path[i]//%DESKTOP%/$DESKTOP}"
 					path[i]="${path[i]//%APPDATA%/$APPDATA}"
@@ -482,7 +540,5 @@ do
 			break;;
 	esac
 	shift
-
-#LANG=$oLang LC_ALL=$oLcAll
 
 done
