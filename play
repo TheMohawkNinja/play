@@ -272,13 +272,18 @@ function run_game()
 
 	while [[ 1 ]]
 	do
-		#Wait for program to actually show up in Task Manager (accounts for user messing around in launcher
-		if [ -n $(winrun "tasklist /fi \"SESSIONNAME eq CONSOLE\" /fo list" | grep -i $task) ] && [!isRunning]; then
+		echo -e "Checking tasklist for \"$task\": \e[32m$(winrun tasklist | grep -i "$task" | head -1)\e[0m"
+
+		#Wait for program to actually show up in Task Manager (accounts for user messing around in launcher)
+		if [ -n "$(winrun tasklist | grep -i "$task")" ] && [ $isRunning -eq 0 ]
+		then
+			echo "\"$task\" found to be running"
 			isRunning=1
 
 		#Switch monitor inputs when program is no longer running
-		elif [ -z $(winrun "tasklist /fi \"SESSIONNAME eq CONSOLE\" /fo list" | grep -i $task) ] && [isRunning]; then
-			echo "No longer seeing $task running on Window system, changing display input."
+		elif [ -z "$(winrun tasklist | grep -i "$task")" ] && [ $isRunning -eq 1 ]
+		then
+			echo "No longer seeing \"$task\" running on Window system, changing display input."
 			winrun "run $ControlMyMonitor /SetValue \\\\.\DISPLAY1\Monitor0 60 4"
 			break;
 		fi
@@ -317,7 +322,7 @@ do
 
 			get_normal_header_spacing
 			print_normal_header
-			list_games
+			list_games | sort
 			break;;
 
 		-lv)#Display games list with more info
@@ -329,7 +334,7 @@ do
 
 			get_verbose_header_spacing
 			print_verbose_header
-			list_games_verbose
+			list_games_verbose | sort
                         break;;
 
 		-f)#Find for parameter and display
@@ -346,7 +351,7 @@ do
 
 			get_normal_header_spacing
 			print_normal_header
-			list_games | grep -i "$2"
+			list_games | grep -i "$2" | sort
 			break;;
 
 		-fv)#Find for parameter and display with more info
@@ -363,7 +368,7 @@ do
 
 			get_verbose_header_spacing
 			print_verbose_header
- 			list_games_verbose | grep -i "$2"
+ 			list_games_verbose | grep -i "$2" | sort
 			break;;
 
 		-a)#Add game to list
