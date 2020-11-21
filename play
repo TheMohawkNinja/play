@@ -60,8 +60,8 @@ function check_for_duplicate()
 				get_record $dctr "$line"
 				echo -e "Duplicate entry for \""$1"\" found:"
 				echo
+				get_verbose_header_spacing
 				print_verbose_header
-				echo
 				pathf="${path[$dctr]}"
 				format_pathf
       				print_verbose_record "${short[$dctr]}" "${long[$dctr]}" "$pathf" "${servicename[$dctr]}"
