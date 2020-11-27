@@ -268,7 +268,7 @@ function run_game()
 
 	echo "Changing monitor input and launching winrun with parameters \"start $1\""
 	sudo chmon $display
-	winrun "start $1"
+	winrun "start "$1""
 
 	while [[ 1 ]]
 	do
@@ -284,7 +284,7 @@ function run_game()
 		elif [ -z "$(winrun tasklist | grep -i "$task")" ] && [ $isRunning -eq 1 ]
 		then
 			echo "No longer seeing \"$task\" running on Window system, changing display input."
-			winrun "run $ControlMyMonitor /SetValue \\\\.\DISPLAY1\Monitor0 60 4"
+			winrun "run $ControlMyMonitor /SetValue \\\\.\DISPLAY1\Monitor0 60 3"
 			break;
 		fi
 	done
@@ -539,11 +539,22 @@ do
 				run_game "$prgm"
 			else
 				echo "Not found!"
+
+				while [[ $answer != "y" && $answer != "n" ]]
+				do
+					echo -n "Do you want to run \"$1\"? (y/n) "
+					read -r answer </dev/tty
+				done
+
+				if [ $answer == "n" ]
+				then
+					exit
+				fi
+
 				run_game "$1"
 			fi
 
 			break;;
 	esac
 	shift
-
 done
