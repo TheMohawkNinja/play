@@ -272,7 +272,7 @@ function run_game()
 
 	while [[ 1 ]]
 	do
-		echo -e "Checking tasklist for \"$task\": \e[32m$(winrun tasklist | grep -i "$task" | head -1)\e[0m"
+		#echo -e "Checking tasklist for \"$task\": \e[32m$(winrun tasklist | grep -i "$task" | head -1)\e[0m"
 
 		#Wait for program to actually show up in Task Manager (accounts for user messing around in launcher)
 		if [ -n "$(winrun tasklist | grep -i "$task")" ] && [ $isRunning -eq 0 ]
@@ -283,7 +283,7 @@ function run_game()
 		#Switch monitor inputs when program is no longer running
 		elif [ -z "$(winrun tasklist | grep -i "$task")" ] && [ $isRunning -eq 1 ]
 		then
-			echo "No longer seeing \"$task\" running on Window system, changing display input."
+			echo "No longer seeing \"$task\" running on Window system, changing display input"
 			winrun "run $ControlMyMonitor /SetValue \\\\.\DISPLAY1\Monitor0 60 3"
 			break;
 		fi
@@ -448,7 +448,7 @@ do
 
 					while [[ $answer != "y" && $answer != "n" ]]
 					do
-						echo -n "Remove this record? (y/n) "
+						echo -n "Remove this record? (y/n): "
 						read -r answer </dev/tty
 					done
 
@@ -542,7 +542,7 @@ do
 
 				while [[ $answer != "y" && $answer != "n" ]]
 				do
-					echo -n "Do you want to run \"$1\"? (y/n) "
+					echo -n "Do you want to run \"$1\"? (y/n): "
 					read -r answer </dev/tty
 				done
 
