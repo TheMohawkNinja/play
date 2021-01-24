@@ -268,20 +268,20 @@ function run_game()
 
 	echo "Changing monitor input and launching winrun with parameters \"start $1\""
 	sudo chmon $display
-	winrun "start "$1""
+	winrun "powershell -command \"start "$1"\""
 
 	while [[ 1 ]]
 	do
 		#echo -e "Checking tasklist for \"$task\": \e[32m$(winrun tasklist | grep -i "$task" | head -1)\e[0m"
 
 		#Wait for program to actually show up in Task Manager (accounts for user messing around in launcher)
-		if [ -n "$(winrun tasklist | grep -i "$task")" ] && [ $isRunning -eq 0 ]
+		if [ -n "$(winrun tasklist -t 3 | grep -i "$task")" ] && [ $isRunning -eq 0 ]
 		then
 			echo "\"$task\" found to be running"
 			isRunning=1
 
 		#Switch monitor inputs when program is no longer running
-		elif [ -z "$(winrun tasklist | grep -i "$task")" ] && [ $isRunning -eq 1 ]
+		elif [ -z "$(winrun tasklist -t 3 | grep -i "$task")" ] && [ $isRunning -eq 1 ]
 		then
 			echo "No longer seeing \"$task\" running on Window system, changing display input"
 			winrun "run $ControlMyMonitor /SetValue \\\\.\DISPLAY1\Monitor0 60 3"
