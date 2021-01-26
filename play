@@ -268,7 +268,7 @@ function run_game()
 
 	echo "Changing monitor input and launching \"$1\""
 	sudo chmon $display
-	winrun "powershell -command \"start-process "$1"\""
+	winrun "powershell -command start-process \\\"$1\\\""
 
 	while [[ 1 ]]
 	do
@@ -504,6 +504,12 @@ do
 			break;;
 
 		*)#Search for matching game
+
+			if [ -n "$(winrun hostname | grep winrund)" ]
+			then
+				echo -e "winrund is not running\n" >&2
+				break;
+			fi
 
 			if [ ! "$1" ]
 			then
