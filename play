@@ -290,10 +290,16 @@ function run_game()
 	done
 }
 
+#Check that winrund is running first
+if [ -n "$(winrun hostname 2>&1 | grep winrund)" ]
+then
+	echo -e "winrund is not running" >&2
+	exit
+fi
+
 #Load games from games.list file
 if [ -f $games ]
 then
-
 	#Read games list
 	while IFS= read -r line
 	do
@@ -504,13 +510,7 @@ do
 			break;;
 
 		*)#Search for matching game
-
-			if [ -n "$(winrun hostname | grep winrund)" ]
-			then
-				echo -e "winrund is not running\n" >&2
-				break;
-			fi
-
+	
 			if [ ! "$1" ]
 			then
 				print_help
