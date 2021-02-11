@@ -266,7 +266,7 @@ function run_game()
 {
 	isRunning=0
 
-	echo "Changing monitor input and launching \"$1\""
+	echo -e "Changing monitor input and launching \"\033[1;37;1m$1\033[0m\""
 	sudo chmon $display
 	winrun "powershell -command start-process \\\"$1\\\""
 
@@ -277,13 +277,13 @@ function run_game()
 		#Wait for program to actually show up in Task Manager (accounts for user messing around in launcher)
 		if [ -n "$(winrun tasklist -t 3 | grep -i "$task")" ] && [ $isRunning -eq 0 ]
 		then
-			echo "\"$task\" found to be running"
+			echo -e "\"\033[1;37;1m$task\033[0m\" found to be running"
 			isRunning=1
 
 		#Switch monitor inputs when program is no longer running
 		elif [ -z "$(winrun tasklist -t 3 | grep -i "$task")" ] && [ $isRunning -eq 1 ]
 		then
-			echo "No longer seeing \"$task\" running on Window system, changing display input"
+			echo -e "No longer seeing \"\033[1;37;1m$task\033[0m\" running on Windows system, changing display input"
 			winrun "run $ControlMyMonitor /SetValue \\\\.\DISPLAY1\Monitor0 60 3"
 			break;
 		fi
@@ -541,10 +541,10 @@ do
 			#If there was a match, run program. Otherwise, run first arg as is.
 			if [ "$prgm" != "" ]
 			then
-				echo "Found!"
+				echo -e "\033[0;32;1mFound\033[0m!"
 				run_game "$prgm"
 			else
-				echo "Not found!"
+				echo -e "\033[0;31;1mNot found\033[0m!"
 
 				while [[ $answer != "y" && $answer != "n" ]]
 				do
