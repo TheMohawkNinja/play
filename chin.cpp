@@ -167,7 +167,7 @@ int main(int argc, char ** argv)
 				}*/
 				printf("\n");
 
-				if(buf[42]==126)
+				if(buf[42]==125)
 				{
 					RWin_State=buf[44];
 				}
